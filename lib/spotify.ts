@@ -12,7 +12,7 @@ export function buildAuthorizeUrl(state: string) {
     response_type: "code",
     client_id: process.env.SPOTIFY_CLIENT_ID!,
     scope: SCOPES,
-    redirect_uri: process.env.SPOTIFY_REDIRECT_URI!,
+    redirect_uri: "https://my-playlist-sigma.vercel.app/api/spotify/callback",
     state
   });
   return `https://accounts.spotify.com/authorize?${params.toString()}`;
