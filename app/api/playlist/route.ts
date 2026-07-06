@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers"; // <-- Importação crucial para quebrar o cache
 import { getValidAccessToken, fetchPlaylistTracks } from "../../../lib/spotify";
 import { getSupabase } from "../../../lib/supabase";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  headers(); 
+
   try {
     const accessToken = await getValidAccessToken();
     const playlistId = process.env.SPOTIFY_PLAYLIST_ID!;
     const tracks = await fetchPlaylistTracks(accessToken, playlistId);
 
     const supabase = getSupabase();
-
-    // Marca todas as faixas atuais como membros e insere/atualiza cada uma
     const currentIds = tracks.map((t) => t.spotify_id);
 
     if (tracks.length > 0) {
@@ -32,11 +33,13 @@ export async function GET() {
       if (upsertError) throw upsertError;
     }
 
-    // Marca como "não é mais membro" quem saiu da playlist
-    await supabase
-      .from("tracks")
-      .update({ is_current_member: false })
-      .not("spotify_id", "in", `(${currentIds.join(",") || "''"})`);
+    // Só roda a atualização se a playlist do Spotify trouxer músicas
+    if (currentIds.length > 0) {
+      await supabase
+        .from("tracks")
+        .update({ is_current_member: false })
+        .not("spotify_id", "in", `(${currentIds.join(",")})`); 
+    }
 
     const sorted = [...tracks].sort((a, b) => {
       const dateA = a.added_at ? new Date(a.added_at).getTime() : 0;
@@ -46,6 +49,7 @@ export async function GET() {
 
     return NextResponse.json({ tracks: sorted });
   } catch (err: any) {
+    console.error("Erro crítico na rota da playlist:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
