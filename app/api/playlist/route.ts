@@ -36,7 +36,7 @@ export async function GET() {
     await supabase
       .from("tracks")
       .update({ is_current_member: false })
-      .not("spotify_id", "in", `(${currentIds.map((id) => `"${id}"`).join(",") || "''"})`);
+      .not("spotify_id", "in", `(${currentIds.join(",") || "''"})`);
 
     const sorted = [...tracks].sort((a, b) => {
       const dateA = a.added_at ? new Date(a.added_at).getTime() : 0;
