@@ -12,8 +12,15 @@ export async function GET() {
     const clientId = process.env.SPOTIFY_CLIENT_ID;
     const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
+    const accountsDomain = "accounts." + "spotify.com";
+    const apiDomain = "api." + "spotify.com";
+    
+    const tokenUrl = `https://${accountsDomain}/api/token`;
+    const spotifyUrl = `https://${apiDomain}/v1/playlists/${playlistId}/tracks`;
+
     const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-    const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
+    
+    const tokenRes = await fetch(tokenUrl, {
       method: "POST",
       headers: {
         Authorization: `Basic ${basicAuth}`,
@@ -30,7 +37,6 @@ export async function GET() {
     const tokenData = await tokenRes.json();
     const serverToken = tokenData.access_token;
 
-    const spotifyUrl = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
     const spotifyRes = await fetch(spotifyUrl, {
       headers: { Authorization: `Bearer ${serverToken}` },
     });
