@@ -12,7 +12,6 @@ export async function GET() {
     const accessToken = await getValidAccessToken();
     const playlistId = (process.env.SPOTIFY_PLAYLIST_ID || "").trim().replace(/["']/g, "");
 
-    // 🔍 DIAGNÓSTICO: Fazendo o fetch manual para expor o payload real do Spotify
     const spotifyUrl = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
     
     const spotifyRes = await fetch(spotifyUrl, {
@@ -21,7 +20,6 @@ export async function GET() {
       },
     });
 
-    // Se o Spotify der erro, ele vai cuspir o status E o texto bruto do erro na tela
     if (!spotifyRes.ok) {
       const errorText = await spotifyRes.text();
       throw new Error(`Spotify respondeu com ${spotifyRes.status}: ${errorText} | URL chamada: ${spotifyUrl}`);
@@ -29,7 +27,6 @@ export async function GET() {
 
     const data = await spotifyRes.json();
     
-    // Mapeia os dados brutos recebidos do Spotify
     const tracks = (data.items || []).map((item: any) => {
       const track = item.track;
       return {
@@ -45,11 +42,13 @@ export async function GET() {
     });
 
     const supabase = getSupabase();
-    const currentIds = tracks.map((t) => t.spotify_id);
+    // Tipagem adicionada aqui para passar no build da Vercel
+    const currentIds = tracks.map((t: any) => t.spotify_id);
 
     if (tracks.length > 0) {
       const { error: upsertError } = await supabase.from("tracks").upsert(
-        tracks.map((t) => ({
+        // Tipagem adicionada aqui também preventivamente
+        tracks.map((t: any) => ({
           spotify_id: t.spotify_id,
           name: t.name,
           artist: t.artist,
@@ -71,7 +70,7 @@ export async function GET() {
         .not("spotify_id", "in", `(${currentIds.join(",")})`); 
     }
 
-    const sorted = [...tracks].sort((a, b) => {
+    const sorted = [...tracks].sort((a: any, b: any) => {
       const dateA = a.added_at ? new Date(a.added_at).getTime() : 0;
       const dateB = b.added_at ? new Date(b.added_at).getTime() : 0;
       return dateB - dateA;
