@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { getValidAccessToken } from "../../../lib/spotify";
 import { getSupabase } from "../../../lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -9,41 +10,19 @@ export async function GET() {
 
   try {
     const playlistId = (process.env.SPOTIFY_PLAYLIST_ID || "").trim().replace(/["']/g, "");
-    const clientId = process.env.SPOTIFY_CLIENT_ID;
-    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+    
+    const accessToken = await getValidAccessToken();
 
-    // Técnica para evitar que o filtro automático corrompa as URLs do Spotify no deploy
     const s1 = "spo";
     const s2 = "tify";
     const s3 = ".com";
     const domain = s1 + s2 + s3;
 
-    const tokenUrl = `https://accounts.${domain}/api/token`;
     const spotifyUrl = `https://api.${domain}/v1/playlists/${playlistId}/tracks`;
 
-    const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-    
-    // Solicita o token de servidor puro (Client Credentials)
-    const tokenRes = await fetch(tokenUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${basicAuth}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: "grant_type=client_credentials",
-    });
-
-    if (!tokenRes.ok) {
-      const tokenErr = await tokenRes.text();
-      throw new Error(`Erro ao gerar token de servidor: ${tokenErr}`);
-    }
-
-    const tokenData = await tokenRes.json();
-    const serverToken = tokenData.access_token;
-
-    // Procura as músicas da playlist de forma pública e direta
+    // Efetua o pedido diretamente com o Bearer Token do utilizador autenticado
     const spotifyRes = await fetch(spotifyUrl, {
-      headers: { Authorization: `Bearer ${serverToken}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     if (!spotifyRes.ok) {
