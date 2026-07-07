@@ -21,22 +21,22 @@ export async function GET() {
     const masterUrl = `https://api.${domain}/v1/playlists/${playlistId}/tracks?limit=1`;
     const masterRes = await fetch(masterUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store" // 
     });
 
-    let total = 100;
+    let total = 0;
     if (masterRes.ok) {
       const masterData = await masterRes.json();
-      if (masterData && typeof masterData.total === "number") {
-        total = masterData.total;
-      }
+      total = masterData.total || 0;
     }
 
-    const limit = 100;
+    const limit = 5;
     const offset = Math.max(0, total - limit);
 
     const spotifyUrl = `https://api.${domain}/v1/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`;
     const spotifyRes = await fetch(spotifyUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store" 
     });
 
     if (spotifyRes.ok) {
@@ -80,7 +80,7 @@ export async function GET() {
       }
     }
   } catch (syncError) {
-    console.error("Sincronização em segundo plano falhou, usando cache local:", syncError);
+    console.error("Sincronização falhou, usando dados do Supabase:", syncError);
   }
 
   try {
@@ -94,7 +94,7 @@ export async function GET() {
     const sorted = (dbTracks || []).sort((a: any, b: any) => {
       const dateA = a.added_at ? new Date(a.added_at).getTime() : 0;
       const dateB = b.added_at ? new Date(b.added_at).getTime() : 0;
-      return dateB - dateA; 
+      return dateB - dateA; // Nova primeiro
     });
 
     return NextResponse.json({ tracks: sorted });
