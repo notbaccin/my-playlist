@@ -18,15 +18,17 @@ export async function GET() {
     const s3 = ".com";
     const domain = s1 + s2 + s3;
 
-    const metaUrl = `https://api.${domain}/v1/playlists/${playlistId}?fields=tracks.total`;
-    const metaRes = await fetch(metaUrl, {
+    const masterUrl = `https://api.${domain}/v1/playlists/${playlistId}/tracks?limit=1`;
+    const masterRes = await fetch(masterUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     let total = 100;
-    if (metaRes.ok) {
-      const metaData = await metaRes.json();
-      total = metaData.tracks?.total || 100;
+    if (masterRes.ok) {
+      const masterData = await masterRes.json();
+      if (masterData && typeof masterData.total === "number") {
+        total = masterData.total;
+      }
     }
 
     const limit = 100;
@@ -55,10 +57,13 @@ export async function GET() {
         };
       }).filter(Boolean);
 
-      const currentIds = tracks.map((t: any) => t.spotify_id);
-
       if (tracks.length > 0) {
-        await supabase.from("tracks").upsert(
+        await supabase
+          .from("tracks")
+          .update({ is_current_member: false })
+          .eq("is_current_member", true);
+
+        const { error: upsertError } = await supabase.from("tracks").upsert(
           tracks.map((t: any) => ({
             spotify_id: t.spotify_id,
             name: t.name,
@@ -71,17 +76,11 @@ export async function GET() {
           })),
           { onConflict: "spotify_id", ignoreDuplicates: false }
         );
-      }
-
-      if (currentIds.length > 0) {
-        await supabase
-          .from("tracks")
-          .update({ is_current_member: false })
-          .not("spotify_id", "in", `(${currentIds.join(",")})`); 
+        if (upsertError) throw upsertError;
       }
     }
   } catch (syncError) {
-    console.error("Sincronização com o fim da playlist falhou:", syncError);
+    console.error("Sincronização em segundo plano falhou, usando cache local:", syncError);
   }
 
   try {
@@ -95,7 +94,7 @@ export async function GET() {
     const sorted = (dbTracks || []).sort((a: any, b: any) => {
       const dateA = a.added_at ? new Date(a.added_at).getTime() : 0;
       const dateB = b.added_at ? new Date(b.added_at).getTime() : 0;
-      return dateB - dateA;
+      return dateB - dateA; 
     });
 
     return NextResponse.json({ tracks: sorted });
