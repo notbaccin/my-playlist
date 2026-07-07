@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   headers(); 
   const supabase = getSupabase();
+  let liveTracks: any[] = []; 
 
   try {
     const playlistId = (process.env.SPOTIFY_PLAYLIST_ID || "").trim().replace(/["']/g, "");
@@ -48,7 +49,7 @@ export async function GET() {
 
     const data = await spotifyRes.json();
     
-    const tracks = (data.items || []).map((item: any) => {
+    liveTracks = (data.items || []).map((item: any) => {
       const track = item.item ?? item.track;
       if (!track) return null;
       return {
@@ -58,19 +59,20 @@ export async function GET() {
         album: track.album?.name || "",
         image_url: track.album?.images?.[0]?.url || "",
         duration_ms: track.duration_ms,
+        preview_url: track.preview_url, // 🚀 Captura o link de 30 segundos do Spotify
         added_at: item.added_at,
         is_current_member: true
       };
     }).filter(Boolean);
 
-    if (tracks.length > 0) {
+    if (liveTracks.length > 0) {
       await supabase
         .from("tracks")
         .update({ is_current_member: false })
         .eq("is_current_member", true);
 
       const { error: upsertError } = await supabase.from("tracks").upsert(
-        tracks.map((t: any) => ({
+        liveTracks.map((t: any) => ({
           spotify_id: t.spotify_id,
           name: t.name,
           artist: t.artist,
@@ -98,7 +100,15 @@ export async function GET() {
 
     if (dbError) throw dbError;
 
-    const sorted = (dbTracks || []).sort((a: any, b: any) => {
+    const merged = (dbTracks || []).map((dbTrack: any) => {
+      const match = liveTracks.find((t) => t.spotify_id === dbTrack.spotify_id);
+      return {
+        ...dbTrack,
+        preview_url: match?.preview_url || null 
+      };
+    });
+
+    const sorted = merged.sort((a: any, b: any) => {
       const dateA = a.added_at ? new Date(a.added_at).getTime() : 0;
       const dateB = b.added_at ? new Date(b.added_at).getTime() : 0;
       return dateB - dateA;
