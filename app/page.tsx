@@ -329,7 +329,13 @@ export default function Home() {
                     )}
                     {isRecent(t.added_at) && <div className="badge-new">nova</div>}
                   </div>
-                  <div className="track-name">{t.name}</div>
+                  <div 
+                    className="track-name" 
+                    style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                    title={t.name}
+                    >
+                      {t.name}
+                  </div>
                   <div className="track-artist">{t.artist}</div>
                   <div className="track-added">{timeAgo(t.added_at)}</div>
                 </a>
@@ -367,7 +373,13 @@ export default function Home() {
                     <div className="rank-art" />
                   )}
                   <div className="rank-info">
-                    <div className="rank-name">{t.name}</div>
+                    <div 
+                        className="rank-name" 
+                        style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                        title={t.name}
+                      >
+                        {t.name}
+                    </div>
                     <div className="rank-artist">{t.artist}</div>
                   </div>
                   <div className="rank-count">{t.play_count}x</div>

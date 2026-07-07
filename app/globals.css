@@ -730,4 +730,11 @@ section {
   .mini-player {
     bottom: 10px;
   }
+  .track-name, .rank-name {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
 }
