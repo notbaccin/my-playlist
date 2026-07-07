@@ -58,7 +58,9 @@ function formatDuration(ms?: number) {
 export default function Home() {
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [recent, setRecent] = useState<Track[] | null>(null);
+  const [recentError, setRecentError] = useState<string | null>(null);
   const [mostPlayed, setMostPlayed] = useState<Track[] | null>(null);
+  const [mostPlayedError, setMostPlayedError] = useState<string | null>(null);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [localProgress, setLocalProgress] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState("now-playing");
@@ -84,9 +86,14 @@ export default function Home() {
     try {
       const res = await fetch("/api/playlist");
       const json = await res.json();
-      if (!json.error) setRecent(json.tracks);
-    } catch {
-      /* ignora */
+      if (json.error) {
+        setRecentError(json.error);
+      } else {
+        setRecentError(null);
+        setRecent(json.tracks);
+      }
+    } catch (err: any) {
+      setRecentError(err?.message ?? "Falha de rede ao buscar a playlist.");
     }
   }
 
@@ -94,9 +101,14 @@ export default function Home() {
     try {
       const res = await fetch("/api/most-played");
       const json = await res.json();
-      if (!json.error) setMostPlayed(json.tracks);
-    } catch {
-      /* ignora */
+      if (json.error) {
+        setMostPlayedError(json.error);
+      } else {
+        setMostPlayedError(null);
+        setMostPlayed(json.tracks);
+      }
+    } catch (err: any) {
+      setMostPlayedError(err?.message ?? "Falha de rede ao buscar o ranking.");
     }
   }
 
@@ -171,12 +183,24 @@ export default function Home() {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  // Fundo ambiente: usa a capa da música tocando agora; se não tiver nada
+  // tocando, cai pra capa mais recente da playlist; se não tiver nenhuma
+  // imagem ainda, some e sobra só o gradiente de cor (aurora).
+  const backdropUrl = track?.image_url ?? recent?.[0]?.image_url ?? null;
+
   return (
     <>
       <div className="aurora" aria-hidden="true">
         <span className="blob blob-1" />
         <span className="blob blob-2" />
         <span className="blob blob-3" />
+        {backdropUrl && (
+          <div
+            key={backdropUrl}
+            className="ambient-backdrop"
+            style={{ backgroundImage: `url(${backdropUrl})` }}
+          />
+        )}
       </div>
 
       <nav className="topnav">
@@ -287,7 +311,9 @@ export default function Home() {
         <section id="recent">
           <h2 className="section-title">Adicionadas recentemente</h2>
           <p className="section-subtitle">Novidades da playlist, em ordem de chegada</p>
-          {recent === null ? (
+          {recentError ? (
+            <p className="empty-state error-state">Erro ao carregar a playlist: {recentError}</p>
+          ) : recent === null ? (
             <p className="empty-state">Carregando…</p>
           ) : recent.length === 0 ? (
             <p className="empty-state">Nenhuma música na playlist ainda.</p>
@@ -321,7 +347,9 @@ export default function Home() {
         <section id="most-played">
           <h2 className="section-title">Mais tocadas</h2>
           <p className="section-subtitle">Ranking calculado a partir do histórico de reproduções</p>
-          {mostPlayed === null ? (
+          {mostPlayedError ? (
+            <p className="empty-state error-state">Erro ao carregar o ranking: {mostPlayedError}</p>
+          ) : mostPlayed === null ? (
             <p className="empty-state">Carregando…</p>
           ) : mostPlayed.length === 0 ? (
             <p className="empty-state">
