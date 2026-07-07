@@ -1,41 +1,24 @@
-🎵 Personal Spotify Dashboard — バシン
-Dashboard musical responsivo e de alta fidelidade desenvolvido com Next.js (App Router) e TypeScript, integrado de forma síncrona com o Supabase e a API Web do Spotify.
+# 🎵 Personal Spotify Dashboard — バシン
 
- Engenharia de Funcionamento
-🎧 1. Sistema "Ouvindo Agora"
-Polling de Estado: Consulta a API local /api/now-playing a cada 8 segundos para obter o status atual do player do Spotify.
+Um dashboard musical moderno, focado em alta performance, design minimalista e consumo de dados em tempo real integrando frontend, backend e banco de dados.
 
-Progresso Fluido: Um cronômetro local de segundo em segundo (useEffect) roda em paralelo para atualizar a barra e os marcadores de tempo continuamente, eliminando delays visuais entre as requisições.
+🔗 **[Acesse o site ao vivo aqui](https://my-playlist-sigma.vercel.app)**
 
-Efeito Blur Adaptativo: Captura a imagem da faixa ativa e projeta um plano de fundo ambiente com desfoque de alta intensidade (filter: blur(70px)) e animação suave Ken Burns de aproximação.
+---
 
-💿 2. Filtro Automático de Álbuns Únicos
-Extração de Capas: Renderiza os projetos visuais baseando-se no histórico de audição do usuário.
+##  <u>Tecnologias Utilizadas</u>
 
-Desduplicação em Memória: Para evitar capas repetidas de um mesmo disco, um gancho de memorização (useMemo) filtra os dados usando a estrutura new Set() sob o padrão chave album::artist, limitando a grade a no máximo 8 álbuns distintos.
+* **Frontend:** Next.js 14+ (App Router), TypeScript, CSS3
+* **Backend:** Next.js Route Handlers (Serverless Functions)
+* **Integrações:** Spotify Web API, Supabase (PostgreSQL)
+* **Hospedagem & CI/CD:** Vercel
 
-⏱️ 3. Paginação Dinâmica de Playlist (Fim do Array)
-Contorno do Limite Nativo: Chamadas padrão da API do Spotify leem apenas os primeiros 100 itens. Para ler o final de uma playlist com mais de 500 músicas com cache desativado (cache: "no-store"), a rota faz a busca em dois passos:
+---
 
-Dispara uma chamada rápida com limit=1 para extrair o metadado total da playlist.
+##  <u>Destaques do Projeto</u>
 
-Calcula o deslocamento matemático exato (offset = total - limit) para capturar cirurgicamente apenas as 5 últimas faixas reais adicionadas, mapeando o nó moderno da API (item.item).
+O maior desafio e diferencial deste projeto foi a construção de um ecossistema musical vivo e reativo que se atualiza sozinho:
 
-Sincronização no Banco: O servidor atualiza os registros antigos no Supabase para is_current_member = false e executa um upsert salvando o novo bloco atômico com o status ativo.
-
-📊 4. Ranking de Mais Tocadas
-Contador de Persistência: A rota /api/most-played consulta o banco de dados e calcula o volume de execuções agrupando e contando as ocorrências repetidas de cada spotify_id registradas na tabela de logs de auditoria play_log, gerando um ranking decrescente.
-
-📍 5. Navegação por Coordenadas de Tela (ScrollSpy Nativo)
-Precisão de Leitura: Substitui o IntersectionObserver tradicional (que pulava seções verticais curtas como a de Álbuns) por um monitoramento manual de rolagem geométrica ativa.
-
-Mecanismo: Avalia o método getBoundingClientRect().top de cada bloco contra uma linha de ativação rígida fixada em 110px (logo abaixo do menu fixo).
-
-Gatilhos de Borda: Força o estado para now-playing no topo absoluto (scrollY < 50) e faz o acendimento automático do último item ao atingir o fim do documento (bottom).
-
-🎨 Ajustes Visuais & UI Polish
-Proteção contra Deformação do Grid: Contêineres flexíveis horizontais de rolagem (.row-scroll) possuem cards filhos (.track-card) blindados com propriedades estritas de tamanho máximo (max-width: 156px; overflow: hidden;), impedindo que créditos de "feat." longos estiquem e deformem o layout.
-
-Tratamento de Linha Única (CSS Ellipsis): As classes .track-name e .rank-name utilizam o combo de propriedades white-space: nowrap, overflow: hidden e text-overflow: ellipsis para interceptar e cortar o texto excedente inserindo automaticamente as reticências (...).
-
-Acessibilidade Contextual: A injeção da propriedade html nativa title={t.name} nas tags de texto garante que o usuário consiga ler o nome completo da música que foi cortado simplesmente pousando o ponteiro do mouse por cima do card.
+* **Ouvindo Agora com Progresso Fluido:** Integração via polling contínuo a cada 8 segundos combinado com um cronômetro local de 1 segundo rodando em paralelo. Isso garante que a barra de progresso se mova de forma contínua e linear, eliminando qualquer delay visual ou engasgo de rede.
+* **Sincronização Inteligente de Playlist:** Algoritmo que contorna o limite nativo de 100 músicas do Spotify calculando o deslocamento matemático exato (`offset = total - 5`) com cache desativado (`no-store`). O sistema varre playlists com mais de 500 faixas e captura cirurgicamente apenas as últimas 5 novidades reais, mantendo o bloco atômico atualizado no Supabase.
+* **UI/UX Adaptativa & ScrollSpy Nativo:** Fundo ambiente dinâmico com efeito *Ambient Blur* de desfoque profundo (`filter: blur(70px)`) que se adapta à capa do álbum atual. A navegação superior fixa utiliza rastreamento de coordenadas geométricas (`getBoundingClientRect`), tornando o menu imune a rolagens rápidas e totalmente estável em seções curtas, complementado com travas automáticas anti-quebra de layout (`ellipsis`).
