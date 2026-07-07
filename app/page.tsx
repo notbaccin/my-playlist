@@ -143,21 +143,35 @@ export default function Home() {
     };
   }, [nowPlaying?.is_playing, nowPlaying?.track?.spotify_id]);
 
-  // Destaca o item do menu conforme a seção visível na tela
   useEffect(() => {
+    const handleScrollFallback = () => {
+      if (window.scrollY < 80) {
+        setActiveSection("now-playing");
+      }
+    };
+
+    window.addEventListener("scroll", handleScrollFallback);
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) setActiveSection(entry.target.id);
+          if (entry.isIntersecting && window.scrollY >= 80) {
+            setActiveSection(entry.target.id);
+          }
         }
       },
-      { rootMargin: "-40% 0px -50% 0px" }
+      { rootMargin: "-85px 0px -70% 0px" } // Lê com precisão a área logo abaixo do menu fixo
     );
+
     for (const s of SECTIONS) {
       const el = document.getElementById(s.id);
       if (el) observer.observe(el);
     }
-    return () => observer.disconnect();
+
+    return () => {
+      window.removeEventListener("scroll", handleScrollFallback);
+      observer.disconnect();
+    };
   }, []);
 
   const track = nowPlaying?.track;

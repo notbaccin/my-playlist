@@ -59,7 +59,7 @@ export async function GET() {
         album: track.album?.name || "",
         image_url: track.album?.images?.[0]?.url || "",
         duration_ms: track.duration_ms,
-        preview_url: track.preview_url, // 🚀 Captura o link de 30 segundos do Spotify
+        preview_url: track.preview_url, 
         added_at: item.added_at,
         is_current_member: true
       };
