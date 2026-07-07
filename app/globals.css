@@ -472,6 +472,8 @@ section {
 
 .track-card {
   flex: 0 0 156px;
+  max-width: 156px; 
+  overflow: hidden;      
   display: block;
   cursor: pointer;
   transition: transform 0.2s ease;
