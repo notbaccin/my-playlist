@@ -205,10 +205,7 @@ export default function Home() {
 
       <nav className="topnav">
         <div className="topnav-inner">
-          <div className="brand">
-            <span className="brand-mark" />
-            Minha Playlist
-          </div>
+          <div className="brand">バシン</div>
           <div className="segmented">
             {SECTIONS.map((s) => (
               <button
