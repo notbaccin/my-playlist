@@ -18,7 +18,7 @@ export async function GET() {
     const s3 = ".com";
     const domain = s1 + s2 + s3;
 
-    const masterUrl = `https://api.${domain}/v1/playlists/${playlistId}/tracks?limit=1`;
+    const masterUrl = `https://api.${domain}/v1/playlists/${playlistId}/items?limit=1`;
     const masterRes = await fetch(masterUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store"
@@ -35,7 +35,7 @@ export async function GET() {
     const limit = 5;
     const offset = Math.max(0, total - limit);
 
-    const spotifyUrl = `https://api.${domain}/v1/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`;
+    const spotifyUrl = `https://api.${domain}/v1/playlists/${playlistId}/items?limit=${limit}&offset=${offset}`;
     const spotifyRes = await fetch(spotifyUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store"
@@ -49,7 +49,7 @@ export async function GET() {
     const data = await spotifyRes.json();
     
     const tracks = (data.items || []).map((item: any) => {
-      const track = item.track;
+      const track = item.item ?? item.track;
       if (!track) return null;
       return {
         spotify_id: track.id,
