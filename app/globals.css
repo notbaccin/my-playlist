@@ -55,8 +55,7 @@ a {
   overflow: hidden;
   pointer-events: none;
   background: var(--bg);
-  /* z-index: auto de propósito — sendo o primeiro filho do body,
-     fica naturalmente atrás de tudo que vem depois no DOM. */
+  z-index: -1;
 }
 
 .blob {
