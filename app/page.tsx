@@ -166,10 +166,10 @@ export default function Home() {
       : 0;
 
   const featuredAlbums = useMemo(() => {
-    if (!recent) return [];
+    if (!mostPlayed) return [];
     const seen = new Set<string>();
     const albums: { key: string; album: string; artist: string; image_url: string | null }[] = [];
-    for (const t of recent) {
+    for (const t of mostPlayed) {
       const key = `${t.album}::${t.artist}`;
       if (seen.has(key) || !t.image_url) continue;
       seen.add(key);
@@ -177,15 +177,12 @@ export default function Home() {
       if (albums.length >= 8) break;
     }
     return albums;
-  }, [recent]);
+  }, [mostPlayed]);
 
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  // Fundo ambiente: usa a capa da música tocando agora; se não tiver nada
-  // tocando, cai pra capa mais recente da playlist; se não tiver nenhuma
-  // imagem ainda, some e sobra só o gradiente de cor (aurora).
   const backdropUrl = track?.image_url ?? recent?.[0]?.image_url ?? null;
 
   return (
@@ -290,7 +287,7 @@ export default function Home() {
         {featuredAlbums.length > 0 && (
           <section id="albums">
             <h2 className="section-title">Álbuns em destaque</h2>
-            <p className="section-subtitle">Dos álbuns adicionados mais recentemente</p>
+            <p className="section-subtitle">Dos álbuns que você mais ouviu recentemente</p>
             <div className="album-grid">
               {featuredAlbums.map((a) => (
                 <div className="album-tile" key={a.key}>
@@ -343,7 +340,7 @@ export default function Home() {
 
         <section id="most-played">
           <h2 className="section-title">Mais tocadas</h2>
-          <p className="section-subtitle">Ranking calculado a partir do histórico de reproduções</p>
+          <p className="section-subtitle">Ranking calculated a partir do histórico de reproduções</p>
           {mostPlayedError ? (
             <p className="empty-state error-state">Erro ao carregar o ranking: {mostPlayedError}</p>
           ) : mostPlayed === null ? (
