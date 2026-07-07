@@ -11,6 +11,7 @@ type Track = {
   duration_ms: number;
   added_at?: string | null;
   play_count?: number;
+  preview_url?: string | null; // 🚀 Adicionado suporte ao link de preview oficial
 };
 
 type NowPlaying = {
@@ -22,6 +23,7 @@ type NowPlaying = {
 const SECTIONS = [
   { id: "now-playing", label: "Ouvindo agora" },
   { id: "albums", label: "Álbuns" },
+  { id: "previews", label: "Prévias" }, // 🚀 Nova seção adicionada ao menu interativo
   { id: "recent", label: "Recentes" },
   { id: "most-played", label: "Mais tocadas" }
 ];
@@ -296,6 +298,53 @@ export default function Home() {
                     <div className="album-tile-name">{a.album}</div>
                     <div className="album-tile-artist">{a.artist}</div>
                   </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/*PRÉVIAS*/}
+        {recent && recent.some(t => t.preview_url) && (
+          <section id="previews">
+            <h2 className="section-title">Prévias Musicais</h2>
+            <p className="section-subtitle">Passe o mouse para ouvir um trecho de 30 segundos das novidades</p>
+            <div className="row-scroll">
+              {recent.filter(t => t.preview_url).slice(0, 10).map((t) => (
+                <div 
+                  className="track-card preview-card" 
+                  key={`preview-${t.spotify_id}`}
+                  onMouseEnter={() => {
+                    const audio = document.getElementById(`audio-${t.spotify_id}`) as HTMLAudioElement;
+                    if (audio) audio.play().catch(() => {});
+                  }}
+                  onMouseLeave={() => {
+                    const audio = document.getElementById(`audio-${t.spotify_id}`) as HTMLAudioElement;
+                    if (audio) {
+                      audio.pause();
+                      audio.currentTime = 0;
+                    }
+                  }}
+                >
+                  <div className="track-art-wrap">
+                    {t.image_url ? (
+                      <img src={t.image_url} alt={t.album} loading="lazy" />
+                    ) : (
+                      <div className="art-fallback" />
+                    )}
+                    <div className="preview-overlay">
+                      <span className="preview-icon">🔊</span>
+                    </div>
+                  </div>
+                  <div 
+                    className="track-name" 
+                    style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                    title={t.name}
+                  >
+                    {t.name}
+                  </div>
+                  <div className="track-artist">{t.artist}</div>
+                  <audio id={`audio-${t.spotify_id}`} src={t.preview_url!} preload="none" loop />
                 </div>
               ))}
             </div>

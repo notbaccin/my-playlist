@@ -19,9 +19,6 @@ html,
 body {
   padding: 0;
   margin: 0;
-  /* Sem cor opaca aqui de propósito: o fundo real é pintado pelo
-     próprio .aurora (primeiro elemento do body). Um background opaco
-     no html/body pintaria por cima dele e escondia tudo. */
   background: transparent;
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
@@ -66,10 +63,6 @@ a {
   will-change: transform;
 }
 
-/* Fundo ambiente: a capa do álbum atual, gigante e desfocada,
-   como no Now Playing do Apple Music. Troca com um fade suave
-   e "respira" lentamente (Ken Burns) pra parecer viva mesmo sem
-   ser um vídeo de verdade. */
 .ambient-backdrop {
   position: absolute;
   inset: -10%;
@@ -497,6 +490,7 @@ section {
   background: var(--surface);
   display: block;
   box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.6);
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .badge-new {
@@ -534,6 +528,42 @@ section {
   font-size: 11px;
   color: var(--text-tertiary);
   margin-top: 2px;
+}
+
+/* preview-audio */
+.preview-card {
+  position: relative;
+}
+
+.preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.preview-icon {
+  font-size: 26px;
+  transform: scale(0.7);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.preview-card:hover .preview-overlay {
+  opacity: 1;
+}
+
+.preview-card:hover .preview-icon {
+  transform: scale(1);
+}
+
+.preview-card:hover img {
+  transform: scale(1.02);
+  filter: brightness(0.85);
 }
 
 /* ---------- Ranked list (most played) ---------- */
