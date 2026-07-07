@@ -12,7 +12,7 @@ export function buildAuthorizeUrl(state: string) {
     response_type: "code",
     client_id: process.env.SPOTIFY_CLIENT_ID!,
     scope: SCOPES,
-    redirect_uri: "https://my-playlist-sigma.vercel.app/api/spotify/callback",
+    redirect_uri: process.env.SPOTIFY_REDIRECT_URI!,
     state
   });
   return `https://accounts.spotify.com/authorize?${params.toString()}`;
@@ -158,14 +158,24 @@ export async function fetchPlaylistTracks(
   playlistId: string
 ): Promise<NormalizedTrack[]> {
   const tracks: NormalizedTrack[] = [];
+  // Em fev/2026 o Spotify aposentou /playlists/{id}/tracks em favor de
+  // /playlists/{id}/items (mesmo formato de resposta, endpoint novo).
   let url =
-    `https://api.spotify.com/v1/playlists/${playlistId}/tracks` +
+    `https://api.spotify.com/v1/playlists/${playlistId}/items` +
     `?fields=next,items(added_at,track(id,name,duration_ms,artists(name),album(name,images)))&limit=100`;
 
   while (url) {
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
+    if (res.status === 403) {
+      throw new Error(
+        "Spotify recusou o acesso (403) à playlist. Desde fev/2026 a API só retorna " +
+          "o conteúdo de playlists que pertencem (ou são colaborativas) à conta que " +
+          "autorizou o app em /api/spotify/login. Confirme que essa é a conta dona " +
+          "desta playlist, ou refaça o login com a conta certa."
+      );
+    }
     if (!res.ok) {
       throw new Error(`Erro ao buscar playlist: ${res.status} ${await res.text()}`);
     }
