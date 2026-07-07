@@ -11,7 +11,7 @@ type Track = {
   duration_ms: number;
   added_at?: string | null;
   play_count?: number;
-  preview_url?: string | null; // 🚀 Adicionado suporte ao link de preview oficial
+  preview_url?: string | null;
 };
 
 type NowPlaying = {
@@ -23,7 +23,7 @@ type NowPlaying = {
 const SECTIONS = [
   { id: "now-playing", label: "Ouvindo agora" },
   { id: "albums", label: "Álbuns" },
-  { id: "previews", label: "Prévias" }, // 🚀 Nova seção adicionada ao menu interativo
+  { id: "previews", label: "Prévias" }, 
   { id: "recent", label: "Recentes" },
   { id: "most-played", label: "Mais tocadas" }
 ];
@@ -144,33 +144,44 @@ export default function Home() {
   }, [nowPlaying?.is_playing, nowPlaying?.track?.spotify_id]);
 
   useEffect(() => {
-    const handleScrollFallback = () => {
-      if (window.scrollY < 80) {
+    const handleScroll = () => {
+      if (window.scrollY < 50) {
         setActiveSection("now-playing");
+        return;
       }
-    };
 
-    window.addEventListener("scroll", handleScrollFallback);
+      const isAtBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 60;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting && window.scrollY >= 80) {
-            setActiveSection(entry.target.id);
+      const activationLine = 110; 
+      let currentSection = "now-playing";
+
+      for (const s of SECTIONS) {
+        const el = document.getElementById(s.id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= activationLine) {
+            currentSection = s.id;
           }
         }
-      },
-      { rootMargin: "-85px 0px -70% 0px" } // Lê com precisão a área logo abaixo do menu fixo
-    );
+      }
 
-    for (const s of SECTIONS) {
-      const el = document.getElementById(s.id);
-      if (el) observer.observe(el);
-    }
+      if (isAtBottom) {
+        const existingSections = SECTIONS.filter((s) => document.getElementById(s.id));
+        if (existingSections.length > 0) {
+          currentSection = existingSections[existingSections.length - 1].id;
+        }
+      }
+
+      setActiveSection(currentSection);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); 
 
     return () => {
-      window.removeEventListener("scroll", handleScrollFallback);
-      observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
