@@ -138,8 +138,10 @@ export type NormalizedTrack = {
   added_at: string | null;
 };
 
-function normalizeTrack(item: any, addedAt: string | null): NormalizedTrack | null {
-  const track = item.track ?? item; // playlist item vs raw track object
+function normalizeTrack(entry: any, addedAt: string | null): NormalizedTrack | null {
+  // Resposta de /playlists/{id}/items usa "item" (era "track" antes de fev/2026).
+  // Mantemos suporte ao formato antigo também, por segurança.
+  const track = entry.item ?? entry.track ?? entry;
   if (!track || !track.id) return null;
   const images: SpotifyImage[] = track.album?.images ?? [];
   return {
@@ -159,10 +161,10 @@ export async function fetchPlaylistTracks(
 ): Promise<NormalizedTrack[]> {
   const tracks: NormalizedTrack[] = [];
   // Em fev/2026 o Spotify aposentou /playlists/{id}/tracks em favor de
-  // /playlists/{id}/items (mesmo formato de resposta, endpoint novo).
+  // /playlists/{id}/items, E renomeou o campo interno "track" -> "item".
   let url =
     `https://api.spotify.com/v1/playlists/${playlistId}/items` +
-    `?fields=next,items(added_at,track(id,name,duration_ms,artists(name),album(name,images)))&limit=100`;
+    `?fields=next,items(added_at,item(id,name,duration_ms,artists(name),album(name,images)))&limit=100`;
 
   while (url) {
     const res = await fetch(url, {
@@ -170,10 +172,11 @@ export async function fetchPlaylistTracks(
     });
     if (res.status === 403) {
       throw new Error(
-        "Spotify recusou o acesso (403) à playlist. Desde fev/2026 a API só retorna " +
-          "o conteúdo de playlists que pertencem (ou são colaborativas) à conta que " +
-          "autorizou o app em /api/spotify/login. Confirme que essa é a conta dona " +
-          "desta playlist, ou refaça o login com a conta certa."
+        "Spotify recusou o acesso (403) à playlist. Duas causas possíveis, segundo o " +
+          "guia de migração de fev/2026 do Spotify: (1) a conta que autorizou o app em " +
+          "/api/spotify/login não é a dona (nem colaboradora) desta playlist — confira " +
+          "em /api/debug/playlist-info; (2) apps em Development Mode agora exigem que o " +
+          "dono do app tenha Spotify Premium ativo."
       );
     }
     if (!res.ok) {
