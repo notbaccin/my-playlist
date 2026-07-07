@@ -18,8 +18,21 @@ export async function GET() {
     const s3 = ".com";
     const domain = s1 + s2 + s3;
 
-    const spotifyUrl = `https://api.${domain}/v1/playlists/${playlistId}/tracks`;
+    const metaUrl = `https://api.${domain}/v1/playlists/${playlistId}?fields=tracks.total`;
+    const metaRes = await fetch(metaUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
 
+    let total = 100;
+    if (metaRes.ok) {
+      const metaData = await metaRes.json();
+      total = metaData.tracks?.total || 100;
+    }
+
+    const limit = 100;
+    const offset = Math.max(0, total - limit);
+
+    const spotifyUrl = `https://api.${domain}/v1/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`;
     const spotifyRes = await fetch(spotifyUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
@@ -68,7 +81,7 @@ export async function GET() {
       }
     }
   } catch (syncError) {
-    console.error("Sincronização em segundo plano falhou:", syncError);
+    console.error("Sincronização com o fim da playlist falhou:", syncError);
   }
 
   try {
