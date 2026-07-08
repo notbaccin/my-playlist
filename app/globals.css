@@ -316,6 +316,7 @@ a {
   transform: scaleY(0.08);
   transform-origin: center;
   will-change: transform;
+  transition: none !important; 
 }
 
 .apple-wave-bars.playing .wave-bar {

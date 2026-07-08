@@ -65,7 +65,10 @@ export default function Home() {
   const [needsAuth, setNeedsAuth] = useState(false);
   const [localProgress, setLocalProgress] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState("now-playing");
+  const [fetchTime, setFetchTime] = useState<number>(Date.now()); // Guarda o marco temporal exato da API
+  
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const barsRef = useRef<HTMLDivElement>(null); // Referência física para as barras do player
 
   async function loadNowPlaying() {
     try {
@@ -78,8 +81,9 @@ export default function Home() {
       setNeedsAuth(false);
       setNowPlaying(json);
       setLocalProgress(json.progress_ms);
+      setFetchTime(Date.now()); // Atualiza o sincronizador temporal
     } catch {
-      /* ignora falha pontual */
+      /* ignora falha pontual de rede */
     }
   }
 
@@ -129,6 +133,7 @@ export default function Home() {
     };
   }, []);
 
+  // Barra de progresso local entre os polls de 8s, pra parecer fluida
   useEffect(() => {
     if (tickRef.current) clearInterval(tickRef.current);
     if (nowPlaying?.is_playing) {
@@ -141,6 +146,7 @@ export default function Home() {
     };
   }, [nowPlaying?.is_playing, nowPlaying?.track?.spotify_id]);
 
+  // ScrollSpy por coordenadas geométricas
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY < 50) {
@@ -183,41 +189,70 @@ export default function Home() {
     };
   }, []);
 
-  const track = nowPlaying?.track;
-  const duration = track?.duration_ms ?? 0;
-  const progressPct =
-    duration > 0 && localProgress !== null
-      ? Math.min(100, (localProgress / duration) * 100)
-      : 0;
+  useEffect(() => {
+    if (!nowPlaying?.track?.spotify_id || !barsRef.current) return;
 
-  // motor que gera frequências e alturas exclusivas baseadas na ID da música
-  const signatureWaveBars = useMemo(() => {
-    if (!track?.spotify_id) return [];
-    const id = track.spotify_id;
-    
+    const id = nowPlaying.track.spotify_id;
     let hash = 0;
     for (let i = 0; i < id.length; i++) {
       hash = id.charCodeAt(i) + ((hash << 5) - hash);
     }
     const seed = Math.abs(hash);
 
-    return Array.from({ length: 19 }).map((_, i) => {
-      // cria uma curva harmônica real (ondas mais altas no centro e menores nas bordas)
-      const distFromCenter = Math.abs(i - 9);
-      const baseScale = Math.max(0.2, 1 - distFromCenter * 0.08);
-      
-      // ritmo musica e tals
-      const customDuration = 0.5 + ((seed + i * 67) % 10) * 0.12; 
-      const customDelay = -(((seed + i * 23) % 100) * 0.02);
-      const customMaxHeight = baseScale * (0.65 + (seed % 4) * 0.1);
+    // Mapeia velocidades rítmicas únicas para cada música com base no id do Spotify
+    const speedFactor1 = 0.0035 + (seed % 4) * 0.001;
+    const speedFactor2 = 0.0018 + (seed % 3) * 0.0008;
 
-      return {
-        duration: `${customDuration}s`,
-        delay: `${customDelay}s`,
-        maxHeight: Math.min(1, customMaxHeight).toFixed(2)
-      };
-    });
-  }, [track?.spotify_id]);
+    const htmlBars = barsRef.current.children;
+    let animationFrameId: number;
+
+    const renderWaves = () => {
+      // Calcula a linha do tempo exata da música cruzando o relógio interno do dispositivo
+      let trackTimeline = nowPlaying.progress_ms ?? 0;
+      if (nowPlaying.is_playing) {
+        trackTimeline += (Date.now() - fetchTime);
+      }
+
+      for (let i = 0; i < htmlBars.length; i++) {
+        const bar = htmlBars[i] as HTMLElement;
+        if (!bar) continue;
+
+        const centerOffset = Math.abs(i - 9);
+        const domeScale = Math.max(0.2, 1 - centerOffset * 0.075);
+
+        if (nowPlaying.is_playing) {
+          // Equações harmónicas trigonométricas alimentadas pelo tempo corrido da música
+          const sinWave = Math.sin(trackTimeline * speedFactor1 + i * 0.75);
+          const cosWave = Math.cos(trackTimeline * speedFactor2 - i * 0.45);
+          const compositeIntensity = (sinWave * cosWave + 1) / 2;
+
+          // Aplica o tamanho simétrico simulando a assinatura de áudio estável
+          const barHeight = domeScale * (0.25 + compositeIntensity * 0.75);
+          bar.style.transform = `scaleY(${Math.min(1, barHeight).toFixed(3)})`;
+          bar.style.opacity = "1";
+        } else {
+          // Estado de pausa estático e limpo
+          bar.style.transform = `scaleY(0.08)`;
+          bar.style.opacity = "0.35";
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(renderWaves);
+    };
+
+    renderWaves();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [nowPlaying?.track?.spotify_id, nowPlaying?.is_playing, fetchTime]);
+
+  const track = nowPlaying?.track;
+  const duration = track?.duration_ms ?? 0;
+  const progressPct =
+    duration > 0 && localProgress !== null
+      ? Math.min(100, (localProgress / duration) * 100)
+      : 0;
 
   const featuredAlbums = useMemo(() => {
     if (!mostPlayed) return [];
@@ -316,17 +351,9 @@ export default function Home() {
                   {track && (
                     <>
                       <div className="apple-wave-wrapper">
-                        <div className={`apple-wave-bars ${nowPlaying?.is_playing ? "playing" : "paused"}`}>
-                          {signatureWaveBars.map((bar, i) => (
-                            <span 
-                              key={i} 
-                              className="wave-bar" 
-                              style={{
-                                "--dur": bar.duration,
-                                "--del": bar.delay,
-                                "--max": bar.maxHeight
-                              } as React.CSSProperties}
-                            />
+                        <div ref={barsRef} className="apple-wave-bars">
+                          {Array.from({ length: 19 }).map((_, i) => (
+                            <span key={i} className="wave-bar" />
                           ))}
                         </div>
                       </div>
