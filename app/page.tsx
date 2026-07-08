@@ -23,7 +23,6 @@ type NowPlaying = {
 const SECTIONS = [
   { id: "now-playing", label: "Ouvindo agora" },
   { id: "albums", label: "Álbuns" },
-  { id: "previews", label: "Prévias" }, 
   { id: "recent", label: "Recentes" },
   { id: "most-played", label: "Mais tocadas" }
 ];
@@ -80,7 +79,7 @@ export default function Home() {
       setNowPlaying(json);
       setLocalProgress(json.progress_ms);
     } catch {
-      /* ignora falha pontual de rede */
+      /* ignora falha pontual */
     }
   }
 
@@ -130,7 +129,6 @@ export default function Home() {
     };
   }, []);
 
-  // Barra de progresso local entre os polls de 8s, pra parecer fluida
   useEffect(() => {
     if (tickRef.current) clearInterval(tickRef.current);
     if (nowPlaying?.is_playing) {
@@ -288,6 +286,14 @@ export default function Home() {
                   </p>
                   {track && (
                     <>
+                      <div className="apple-wave-wrapper">
+                        <div className={`apple-wave-bars ${nowPlaying?.is_playing ? "playing" : "paused"}`}>
+                          {Array.from({ length: 19 }).map((_, i) => (
+                            <span key={i} className="wave-bar" />
+                          ))}
+                        </div>
+                      </div>
+
                       <div className="progress-track">
                         <div className="progress-fill" style={{ width: `${progressPct}%` }} />
                       </div>
@@ -323,53 +329,6 @@ export default function Home() {
                     <div className="album-tile-name">{a.album}</div>
                     <div className="album-tile-artist">{a.artist}</div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/*PRÉVIAS*/}
-        {recent && recent.some(t => t.preview_url) && (
-          <section id="previews">
-            <h2 className="section-title">Prévias Musicais</h2>
-            <p className="section-subtitle">Passe o mouse para ouvir um trecho de 30 segundos das novidades</p>
-            <div className="row-scroll">
-              {recent.filter(t => t.preview_url).slice(0, 10).map((t) => (
-                <div 
-                  className="track-card preview-card" 
-                  key={`preview-${t.spotify_id}`}
-                  onMouseEnter={() => {
-                    const audio = document.getElementById(`audio-${t.spotify_id}`) as HTMLAudioElement;
-                    if (audio) audio.play().catch(() => {});
-                  }}
-                  onMouseLeave={() => {
-                    const audio = document.getElementById(`audio-${t.spotify_id}`) as HTMLAudioElement;
-                    if (audio) {
-                      audio.pause();
-                      audio.currentTime = 0;
-                    }
-                  }}
-                >
-                  <div className="track-art-wrap">
-                    {t.image_url ? (
-                      <img src={t.image_url} alt={t.album} loading="lazy" />
-                    ) : (
-                      <div className="art-fallback" />
-                    )}
-                    <div className="preview-overlay">
-                      <span className="preview-icon">🔊</span>
-                    </div>
-                  </div>
-                  <div 
-                    className="track-name" 
-                    style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-                    title={t.name}
-                  >
-                    {t.name}
-                  </div>
-                  <div className="track-artist">{t.artist}</div>
-                  <audio id={`audio-${t.spotify_id}`} src={t.preview_url!} preload="none" loop />
                 </div>
               ))}
             </div>
@@ -420,7 +379,7 @@ export default function Home() {
 
         <section id="most-played">
           <h2 className="section-title">Mais tocadas</h2>
-          <p className="section-subtitle">Ranking calculated a partir do histórico de reproduções</p>
+          <p className="section-subtitle">Ranking calculado a partir do histórico de reproduções</p>
           {mostPlayedError ? (
             <p className="empty-state error-state">Erro ao carregar o ranking: {mostPlayedError}</p>
           ) : mostPlayed === null ? (
