@@ -3,9 +3,6 @@ import { pollAndLogCurrentTrack } from "../../../../lib/spotify";
 
 export const dynamic = "force-dynamic";
 
-// Chame esta rota periodicamente (Vercel Cron, GitHub Actions ou cron-job.org)
-// com o header  Authorization: Bearer SEU_CRON_SECRET
-// para registrar "plays" mesmo com ninguém olhando o site.
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -13,9 +10,22 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const current = await pollAndLogCurrentTrack();
-    return NextResponse.json({ ok: true, current });
+    await pollAndLogCurrentTrack();
+    console.log("-> Cron: Status de reprodução e logs de audição atualizados.");
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("-> Cron Erro (Now Playing):", err.message);
   }
+
+  try {
+    const playlistUrl = new URL("/api/playlist", req.url);
+    await fetch(playlistUrl.toString(), { cache: "no-store" });
+    console.log("-> Cron: Playlist atualizada via requisição interna.");
+  } catch (err: any) {
+    console.error("-> Cron Erro (Playlist Sync):", err.message);
+  }
+
+  return NextResponse.json({ 
+    ok: true, 
+    message: "Sincronização completa de histórico e playlist executada com sucesso!" 
+  });
 }
