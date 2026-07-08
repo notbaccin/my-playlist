@@ -190,6 +190,35 @@ export default function Home() {
       ? Math.min(100, (localProgress / duration) * 100)
       : 0;
 
+  // motor que gera frequências e alturas exclusivas baseadas na ID da música
+  const signatureWaveBars = useMemo(() => {
+    if (!track?.spotify_id) return [];
+    const id = track.spotify_id;
+    
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const seed = Math.abs(hash);
+
+    return Array.from({ length: 19 }).map((_, i) => {
+      // cria uma curva harmônica real (ondas mais altas no centro e menores nas bordas)
+      const distFromCenter = Math.abs(i - 9);
+      const baseScale = Math.max(0.2, 1 - distFromCenter * 0.08);
+      
+      // ritmo musica e tals
+      const customDuration = 0.5 + ((seed + i * 67) % 10) * 0.12; 
+      const customDelay = -(((seed + i * 23) % 100) * 0.02);
+      const customMaxHeight = baseScale * (0.65 + (seed % 4) * 0.1);
+
+      return {
+        duration: `${customDuration}s`,
+        delay: `${customDelay}s`,
+        maxHeight: Math.min(1, customMaxHeight).toFixed(2)
+      };
+    });
+  }, [track?.spotify_id]);
+
   const featuredAlbums = useMemo(() => {
     if (!mostPlayed) return [];
     const seen = new Set<string>();
@@ -288,8 +317,16 @@ export default function Home() {
                     <>
                       <div className="apple-wave-wrapper">
                         <div className={`apple-wave-bars ${nowPlaying?.is_playing ? "playing" : "paused"}`}>
-                          {Array.from({ length: 19 }).map((_, i) => (
-                            <span key={i} className="wave-bar" />
+                          {signatureWaveBars.map((bar, i) => (
+                            <span 
+                              key={i} 
+                              className="wave-bar" 
+                              style={{
+                                "--dur": bar.duration,
+                                "--del": bar.delay,
+                                "--max": bar.maxHeight
+                              } as React.CSSProperties}
+                            />
                           ))}
                         </div>
                       </div>
