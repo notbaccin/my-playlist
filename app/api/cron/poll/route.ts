@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { pollAndLogCurrentTrack } from "@/lib/spotify"; 
+import { pollAndLogCurrentTrack } from "../../../../lib/spotify"; 
+
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
