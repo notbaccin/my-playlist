@@ -410,7 +410,7 @@ export default function Home() {
             <p className="empty-state">Nenhuma música na playlist ainda.</p>
           ) : (
             <div className="row-scroll">
-              {recent.slice(0, 24).map((t) => (
+              {recent.slice(0, 5).map((t) => (
                 <a
                   className="track-card"
                   key={t.spotify_id}
