@@ -11,21 +11,13 @@ export async function GET(req: NextRequest) {
 
   try {
     await pollAndLogCurrentTrack();
-    console.log("-> Cron: Status de reprodução e logs de audição atualizados.");
+    console.log("-> Cron: Histórico de audição verificado e atualizado.");
   } catch (err: any) {
     console.error("-> Cron Erro (Now Playing):", err.message);
   }
 
-  try {
-    const playlistUrl = new URL("/api/playlist", req.url);
-    await fetch(playlistUrl.toString(), { cache: "no-store" });
-    console.log("-> Cron: Playlist atualizada via requisição interna.");
-  } catch (err: any) {
-    console.error("-> Cron Erro (Playlist Sync):", err.message);
-  }
-
   return NextResponse.json({ 
     ok: true, 
-    message: "Sincronização completa de histórico e playlist executada com sucesso!" 
+    message: "Histórico de reprodução verificado com sucesso!" 
   });
 }

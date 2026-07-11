@@ -123,8 +123,8 @@ export default function Home() {
     loadMostPlayed();
 
     const nowPlayingPoll = setInterval(loadNowPlaying, 8000);
-    const playlistPoll = setInterval(loadPlaylist, 60000);
-    const mostPlayedPoll = setInterval(loadMostPlayed, 60000);
+    const playlistPoll = setInterval(loadPlaylist, 300000);
+    const mostPlayedPoll = setInterval(loadMostPlayed, 300000);
 
     return () => {
       clearInterval(nowPlayingPoll);
