@@ -87,6 +87,7 @@ export async function GET() {
     console.warn("⚠️ Modo de Segurança: Spotify indisponível. Carregando dados salvos no Supabase.", syncError.message);
   }
 
+  if (tracksToReturn.length === 0) {
     try {
       const { data: dbTracks } = await supabase
         .from("tracks")
